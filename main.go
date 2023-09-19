@@ -1,13 +1,16 @@
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
+	"net"
 	"strconv"
 	"strings"
 )
 
 // 00160100000100000000000003646e7306676f6f676c6503636f6d0000010001
 // 00160100000100000000000003646e7306676f6f676c6503636f6d0000010001
+// 00160000000100000000000003646e7306676f6f676c6503636f6d0000010001
 
 // 0016
 // 0100
@@ -63,7 +66,8 @@ func convertURLToHexString(input string) string {
 
 func main() {
 	var id int = 22
-	var flags int = 256
+	// var flags int = 256
+	var flags int = 0
 	var nQuestions int = 1
 	var nAnswers int = 0
 	var nAuthority int = 0
@@ -88,4 +92,38 @@ func main() {
 	resultStr = resultStr + getByteHexString(nQueryClass, 2)
 
 	fmt.Println(resultStr)
+
+	conn, err := net.Dial("udp", "8.8.8.8:53")
+
+	if err != nil {
+		fmt.Printf("Some error %v", err)
+		return
+	}
+
+	buffer, error := hex.DecodeString(resultStr)
+
+	if error != nil {
+		fmt.Printf("Some error %v", error)
+		return
+	}
+
+	_, err = conn.Write(buffer)
+
+	if err != nil {
+		fmt.Printf("Some error %v", err)
+		return
+	}
+
+	response := make([]byte, 1024)
+
+	n, err := conn.Read(response)
+
+	if err != nil {
+		fmt.Printf("Some error %v", err)
+		return
+	}
+
+	fmt.Printf("Received %d bytes\n", n)
+	fmt.Printf("%x\n", response[:n])
+	fmt.Printf("%s\n", string(response[:n]))
 }
